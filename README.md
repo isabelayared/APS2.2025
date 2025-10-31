@@ -88,6 +88,10 @@ C:\mingw-w64\bin
 
 ---
 
+> *Link youtube, vídeo de suporte -> https://youtu.be/3pfRvy_gfqY?si=PsiDk5G7IFfIEnvR*
+
+```
+
 ### 4. Testar a instalação
 
 Abra o **Prompt de Comando** e digite:
