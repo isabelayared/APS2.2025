@@ -258,7 +258,6 @@ Deseja ver mais 200 registros? (S/N):
 | Compilador          | MinGW-w64 (GCC 9.2 ou superior) |
 | Padrão C            | ANSI C (C89/C90)                |
 | Editor              | Visual Studio Code              |
-| Memória             | ≥ 4 GB RAM                      |
 
 ---
 
