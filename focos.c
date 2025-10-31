@@ -1,6 +1,5 @@
 /* main.c
  * APS - Sistema de Busca e Ordenação (Pará 2023/2024)
- * Autor: Gerado para Isabela Soares - 3º/4º CC (Estrutura de Dados)
  * 
  * - Lê arquivos CSV (2023, 2024)
  * - Ordena por município, bioma ou data
@@ -376,3 +375,4 @@ int main(void) {
     menu_main();
     return 0;
 }
+
