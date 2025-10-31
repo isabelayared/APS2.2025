@@ -16,21 +16,21 @@
 #include <time.h>
 
 #define LINE_SIZE 1024
-#define INITIAL_CAPACITY 1000
 #define MAX_FIELD 256
+#define INITIAL_CAPACITY 1000
 #define BOGO_MAX_ATTEMPTS 1000000L
-#define PAGE_SIZE 200  /* número de registros por página */
+#define PAGE_SIZE 200 /* número de registros por página */
 
 typedef struct {
-    char id[MAX_FIELD];
-    char uuid[MAX_FIELD];
-    char latitude[MAX_FIELD];
-    char longitude[MAX_FIELD];
-    char datahora[MAX_FIELD];
-    char pais[MAX_FIELD];
-    char estado[MAX_FIELD];
-    char municipio[MAX_FIELD];
-    char bioma[MAX_FIELD];
+    char id[10];
+    char uuid[37];
+    char latitude[15];
+    char longitude[15];
+    char datahora[20];
+    char pais[30];
+    char estado[30];
+    char municipio[30];
+    char bioma[30];
 } Record;
 
 /* Contadores globais */
@@ -38,11 +38,11 @@ long long comparisons;
 long long swaps;
 
 /* Tipo de função comparadora */
-typedef int (*Comparator)(const Record*, const Record*);
+typedef int (Comparator)(const Record*, const Record*);
 
 /* ---------- Funções utilitárias ---------- */
 Record* alloc_records(size_t n) {
-    Record *r = (Record*) malloc(sizeof(Record) * n);
+    Record* r = (Record*) malloc(sizeof(Record) * n);
     if (!r) {
         fprintf(stderr, "Erro: memoria insuficiente\n");
         exit(EXIT_FAILURE);
@@ -67,7 +67,10 @@ void trim(char *s) {
     while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
     if (p != s) memmove(s, p, strlen(p) + 1);
     end = s + strlen(s) - 1;
-    while (end >= s && (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')) { *end = '\0'; end--; }
+    while (end >= s && (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')) {
+        *end = '\0';
+        end--;
+    }
 }
 
 /* ---------- Comparadores ---------- */
@@ -81,7 +84,6 @@ Record* read_csv(const char *filename, size_t *out_n) {
     char line[LINE_SIZE];
     size_t capacity = INITIAL_CAPACITY, n = 0;
     Record *arr = alloc_records(capacity);
-
     if (!f) {
         fprintf(stderr, "Erro: nao foi possivel abrir o arquivo %s\n", filename);
         exit(EXIT_FAILURE);
@@ -95,15 +97,15 @@ Record* read_csv(const char *filename, size_t *out_n) {
         while (token) {
             trim(token);
             switch (field) {
-                case 0: strncpy(rec.id, token, MAX_FIELD); break;
-                case 1: strncpy(rec.uuid, token, MAX_FIELD); break;
-                case 2: strncpy(rec.latitude, token, MAX_FIELD); break;
-                case 3: strncpy(rec.longitude, token, MAX_FIELD); break;
-                case 4: strncpy(rec.datahora, token, MAX_FIELD); break;
-                case 5: strncpy(rec.pais, token, MAX_FIELD); break;
-                case 6: strncpy(rec.estado, token, MAX_FIELD); break;
-                case 7: strncpy(rec.municipio, token, MAX_FIELD); break;
-                case 8: strncpy(rec.bioma, token, MAX_FIELD); break;
+                case 0: strncpy(rec.id, token, sizeof(rec.id)); break;
+                case 1: strncpy(rec.uuid, token, sizeof(rec.uuid)); break;
+                case 2: strncpy(rec.latitude, token, sizeof(rec.latitude)); break;
+                case 3: strncpy(rec.longitude, token, sizeof(rec.longitude)); break;
+                case 4: strncpy(rec.datahora, token, sizeof(rec.datahora)); break;
+                case 5: strncpy(rec.pais, token, sizeof(rec.pais)); break;
+                case 6: strncpy(rec.estado, token, sizeof(rec.estado)); break;
+                case 7: strncpy(rec.municipio, token, sizeof(rec.municipio)); break;
+                case 8: strncpy(rec.bioma, token, sizeof(rec.bioma)); break;
             }
             field++;
             token = strtok(NULL, ",");
@@ -112,21 +114,25 @@ Record* read_csv(const char *filename, size_t *out_n) {
         if (n >= capacity) {
             capacity *= 2;
             arr = (Record*) realloc(arr, capacity * sizeof(Record));
-            if (!arr) { fprintf(stderr, "Erro: memoria insuficiente\n"); exit(EXIT_FAILURE); }
+            if (!arr) {
+                fprintf(stderr, "Erro: memoria insuficiente\n");
+                exit(EXIT_FAILURE);
+            }
         }
         arr[n++] = rec;
     }
-
     fclose(f);
     *out_n = n;
     return arr;
 }
 
 /* ---------- Algoritmos de Ordenação ---------- */
-int record_less(const Record *a, const Record *b, Comparator comp) { return comp(a, b) < 0; }
+int record_less(const Record *a, const Record *b, Comparator *comp) {
+    return comp(a, b) < 0;
+}
 
 /* Bubble Sort */
-void bubble_sort(Record *arr, size_t n, Comparator comp) {
+void bubble_sort(Record *arr, size_t n, Comparator *comp) {
     size_t i, j;
     for (i = 0; i < n; i++)
         for (j = 0; j + 1 < n; j++)
@@ -135,7 +141,7 @@ void bubble_sort(Record *arr, size_t n, Comparator comp) {
 }
 
 /* Selection Sort */
-void selection_sort(Record *arr, size_t n, Comparator comp) {
+void selection_sort(Record *arr, size_t n, Comparator *comp) {
     size_t i, j, min;
     for (i = 0; i < n - 1; i++) {
         min = i;
@@ -148,7 +154,7 @@ void selection_sort(Record *arr, size_t n, Comparator comp) {
 }
 
 /* Insertion Sort */
-void insertion_sort(Record *arr, size_t n, Comparator comp) {
+void insertion_sort(Record *arr, size_t n, Comparator *comp) {
     size_t i, j;
     for (i = 1; i < n; i++) {
         Record key = arr[i];
@@ -164,7 +170,7 @@ void insertion_sort(Record *arr, size_t n, Comparator comp) {
 }
 
 /* Shell Sort */
-void shell_sort(Record *arr, size_t n, Comparator comp) {
+void shell_sort(Record *arr, size_t n, Comparator *comp) {
     size_t gap, i, j;
     for (gap = n / 2; gap > 0; gap /= 2)
         for (i = gap; i < n; i++) {
@@ -181,7 +187,7 @@ void shell_sort(Record *arr, size_t n, Comparator comp) {
 }
 
 /* Merge Sort */
-void merge(Record *arr, size_t l, size_t m, size_t r, Record *aux, Comparator comp) {
+void merge(Record *arr, size_t l, size_t m, size_t r, Record *aux, Comparator *comp) {
     size_t i = l, j = m, k = l;
     while (i < m && j < r)
         if (!record_less(&arr[j], &arr[i], comp))
@@ -192,21 +198,23 @@ void merge(Record *arr, size_t l, size_t m, size_t r, Record *aux, Comparator co
     while (j < r) aux[k++] = arr[j++];
     for (k = l; k < r; k++) { arr[k] = aux[k]; swaps++; }
 }
-void merge_rec(Record *arr, size_t l, size_t r, Record *aux, Comparator comp) {
+
+void merge_rec(Record *arr, size_t l, size_t r, Record *aux, Comparator *comp) {
     if (r - l <= 1) return;
     size_t m = (l + r) / 2;
     merge_rec(arr, l, m, aux, comp);
     merge_rec(arr, m, r, aux, comp);
     merge(arr, l, m, r, aux, comp);
 }
-void merge_sort(Record *arr, size_t n, Comparator comp) {
+
+void merge_sort(Record *arr, size_t n, Comparator *comp) {
     Record *aux = alloc_records(n);
     merge_rec(arr, 0, n, aux, comp);
     free(aux);
 }
 
 /* Quick Sort */
-size_t partition(Record *arr, size_t low, size_t high, Comparator comp) {
+size_t partition(Record *arr, size_t low, size_t high, Comparator *comp) {
     Record pivot = arr[high];
     size_t i = low, j;
     for (j = low; j < high; j++)
@@ -217,36 +225,51 @@ size_t partition(Record *arr, size_t low, size_t high, Comparator comp) {
     swap_records(&arr[i], &arr[high]);
     return i;
 }
-void quick_rec(Record *arr, size_t low, size_t high, Comparator comp) {
+
+void quick_rec(Record *arr, size_t low, size_t high, Comparator *comp) {
     if (low < high) {
         size_t p = partition(arr, low, high, comp);
         if (p > 0) quick_rec(arr, low, p - 1, comp);
         quick_rec(arr, p + 1, high, comp);
     }
 }
-void quick_sort(Record *arr, size_t n, Comparator comp) { if (n) quick_rec(arr, 0, n - 1, comp); }
+
+void quick_sort(Record *arr, size_t n, Comparator *comp) {
+    if (n) quick_rec(arr, 0, n - 1, comp);
+}
 
 /* Heap Sort */
-void heapify(Record *arr, size_t n, size_t i, Comparator comp) {
+void heapify(Record *arr, size_t n, size_t i, Comparator *comp) {
     size_t largest = i, l = 2 * i + 1, r = 2 * i + 2;
     if (l < n && record_less(&arr[largest], &arr[l], comp)) largest = l;
     if (r < n && record_less(&arr[largest], &arr[r], comp)) largest = r;
-    if (largest != i) { swap_records(&arr[i], &arr[largest]); heapify(arr, n, largest, comp); }
+    if (largest != i) {
+        swap_records(&arr[i], &arr[largest]);
+        heapify(arr, n, largest, comp);
+    }
 }
-void heap_sort(Record *arr, size_t n, Comparator comp) {
+
+void heap_sort(Record *arr, size_t n, Comparator *comp) {
     size_t i;
-    for (i = n / 2; i-- > 0; ) { heapify(arr, n, i, comp); if (i == 0) break; }
-    for (i = n - 1; i > 0; i--) { swap_records(&arr[0], &arr[i]); heapify(arr, i, 0, comp); }
+    for (i = n / 2; i-- > 0; ) {
+        heapify(arr, n, i, comp);
+        if (i == 0) break;
+    }
+    for (i = n - 1; i > 0; i--) {
+        swap_records(&arr[0], &arr[i]);
+        heapify(arr, i, 0, comp);
+    }
 }
 
 /* Bogo Sort */
-int is_sorted(const Record *arr, size_t n, Comparator comp) {
+int is_sorted(const Record *arr, size_t n, Comparator *comp) {
     size_t i;
     for (i = 1; i < n; i++)
         if (record_less(&arr[i], &arr[i - 1], comp))
             return 0;
     return 1;
 }
+
 void shuffle(Record *arr, size_t n) {
     size_t i;
     for (i = n - 1; i > 0; i--) {
@@ -254,7 +277,8 @@ void shuffle(Record *arr, size_t n) {
         swap_records(&arr[i], &arr[j]);
     }
 }
-void bogo_sort(Record *arr, size_t n, Comparator comp) {
+
+void bogo_sort(Record *arr, size_t n, Comparator *comp) {
     long attempts = 0;
     while (!is_sorted(arr, n, comp)) {
         if (++attempts > BOGO_MAX_ATTEMPTS) {
@@ -267,12 +291,12 @@ void bogo_sort(Record *arr, size_t n, Comparator comp) {
 
 /* ---------- Exibição paginada ---------- */
 void print_record(const Record *r) {
-    printf("%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s\n",
+    printf("%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s\n",
            r->id, r->uuid, r->latitude, r->longitude, r->datahora,
            r->pais, r->estado, r->municipio, r->bioma);
 }
 
-void run_algorithm(int algo, const Record *original, size_t n, Comparator comp) {
+void run_algorithm(int algo, const Record *original, size_t n, Comparator *comp) {
     Record *arr = alloc_records(n);
     copy_records(arr, original, n);
     comparisons = swaps = 0;
@@ -303,19 +327,15 @@ void run_algorithm(int algo, const Record *original, size_t n, Comparator comp) 
     while (shown < n) {
         size_t i, limit = shown + PAGE_SIZE;
         if (limit > n) limit = n;
-
         clock_t block_start = clock();
         for (i = shown; i < limit; i++) print_record(&arr[i]);
         clock_t block_end = clock();
-
         double block_time = ((double)(block_end - start)) / CLOCKS_PER_SEC;
         printf("\n--- Mostrados %u/%u registros ---\n", (unsigned)limit, (unsigned)n);
         printf("Comparações: %lld | Trocas: %lld | Tempo acumulado: %.6f s\n",
                comparisons, swaps, block_time);
-
         shown = limit;
         if (shown >= n) break;
-
         printf("\nDeseja ver mais 200 registros? (S/N): ");
         scanf("%s", resp);
         if (resp[0] != 'S' && resp[0] != 's') break;
@@ -337,6 +357,7 @@ void menu_main() {
         printf("\n=== APS - Ordenação de Dados (Pará) ===\n");
         printf("1 - Ano 2023\n2 - Ano 2024\n0 - Sair\nEscolha: ");
         scanf("%d", &year);
+
         if (year == 0) return;
         if (year == 1) strcpy(filename, "focos_br_pa_ref_2023.csv");
         else if (year == 2) strcpy(filename, "focos_br_pa_ref_2024.csv");
@@ -352,7 +373,7 @@ void menu_main() {
             if (field == 0) { free(data); return; }
             if (field == 4) { free(data); break; }
 
-            Comparator comp = NULL;
+            Comparator *comp = NULL;
             if (field == 1) comp = cmp_municipio;
             else if (field == 2) comp = cmp_bioma;
             else if (field == 3) comp = cmp_datahora;
@@ -375,4 +396,5 @@ int main(void) {
     menu_main();
     return 0;
 }
+
 
